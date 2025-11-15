@@ -7,7 +7,7 @@
 
     <persistence-unit name="logisimPU" transaction-type="RESOURCE_LOCAL">
 
-        <!-- Entities will be automatically scanned -->
+        <!-- Entities -->
         <class>org.example.entity.ProjectEntity</class>
         <class>org.example.entity.CircuitEntity</class>
         <class>org.example.entity.ComponentEntity</class>
@@ -15,20 +15,16 @@
         <class>org.example.entity.PortEntity</class>
 
         <properties>
-
-            <!-- DB CONFIG -->
-            <property name="jakarta.persistence.jdbc.url"
-                      value="jdbc:mysql://avnadmin:AVNS_W_CpAl1gu-NWLCQ2lg7@mysql-291bd5dd-rayyanasghar9-f141.k.aivencloud.com:21331/defaultdb?ssl-mode=REQUIRED"/>
-            <property name="jakarta.persistence.jdbc.user" value="root"/>
+            <!-- These values will be overridden programmatically -->
+            <property name="jakarta.persistence.jdbc.url" value=""/>
+            <property name="jakarta.persistence.jdbc.user" value=""/>
             <property name="jakarta.persistence.jdbc.password" value=""/>
             <property name="jakarta.persistence.jdbc.driver" value="com.mysql.cj.jdbc.Driver"/>
 
-            <!-- Hibernate Provider -->
+            <!-- Hibernate -->
             <property name="hibernate.hbm2ddl.auto" value="update"/>
-<!--            <property name="hibernate.dialect" value="org.hibernate.dialect.MySQLDialect"/>-->
             <property name="hibernate.show_sql" value="true"/>
             <property name="hibernate.format_sql" value="true"/>
-
         </properties>
 
     </persistence-unit>
