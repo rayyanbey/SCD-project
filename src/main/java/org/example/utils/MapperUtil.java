@@ -34,14 +34,6 @@ public class MapperUtil {
             circuit.addComponent(dc);
         }
 
-        // Step 2: Create domain connectors
-        for (ComponentEntity ce : entity.getComponents()) {
-            Component domainComponent = compMap.get(ce.getId());
-
-            // Map ports later
-            // Nothing to do here yet
-        }
-
         // Step 3: Create ports for each component
         Map<Long, InputPort> inputPortMap = new HashMap<>();
         Map<Long, OutputPort> outputPortMap = new HashMap<>();
@@ -98,7 +90,7 @@ public class MapperUtil {
             case "NOR" -> new NorGate();
             case "SWITCH" -> new Switch();
             case "LED" -> new LED();
-            case "SUBCIRCUIT" -> new Circuit();  // optional, for nested circuits
+            case "SUBCIRCUIT" -> throw new RuntimeException("SUBCIRCUIT components are not supported yet: " + ce.getId());
             default -> throw new RuntimeException("Unknown component type: " + type);
         };
     }
