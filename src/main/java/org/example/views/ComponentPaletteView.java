@@ -2,20 +2,27 @@ package org.example.views;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionListener;
 
 public class ComponentPaletteView extends JPanel {
 
-    public ComponentPaletteView() {
-        setPreferredSize(new Dimension(150, 800));
-        setLayout(new GridLayout(10, 1));
+    private String[] types = {"AND","OR","NOT","XOR","NAND","NOR","SWITCH","LED","CLOCK"};
+    private ActionListener listener;
 
-        add(new JButton("AND"));
-        add(new JButton("OR"));
-        add(new JButton("NOT"));
-        add(new JButton("XOR"));
-        add(new JButton("NAND"));
-        add(new JButton("NOR"));
-        add(new JButton("SWITCH"));
-        add(new JButton("LED"));
+    public ComponentPaletteView() {
+        setPreferredSize(new Dimension(120, 800));
+        setLayout(new GridLayout(types.length, 1, 4, 4));
+        for (String t : types) {
+            JButton b = new JButton(t);
+            b.setActionCommand(t);
+            b.addActionListener(e -> {
+                if (listener != null) listener.actionPerformed(e);
+            });
+            add(b);
+        }
+    }
+
+    public void setSelectionListener(ActionListener l) {
+        this.listener = l;
     }
 }
