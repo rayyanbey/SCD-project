@@ -1,9 +1,13 @@
 package org.example.utils;
 
-import org.example.domain.Circuit;
-import org.example.domain.Component;
+import org.example.domain.*;
+import org.example.domain.gates.*;
+import org.example.domain.io.LED;
+import org.example.domain.io.Switch;
 import org.example.entity.CircuitEntity;
 import org.example.entity.ComponentEntity;
+import org.example.entity.ConnectorEntity;
+import org.example.entity.PortEntity;
 
 import java.util.*;
 
