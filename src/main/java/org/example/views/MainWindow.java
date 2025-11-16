@@ -1,5 +1,7 @@
 package org.example.views;
 
+import org.example.controllers.MainController;
+
 import javax.swing.*;
 import java.awt.*;
 
@@ -25,4 +27,5 @@ public class MainWindow extends JFrame {
 
         setLocationRelativeTo(null);
     }
+
 }
