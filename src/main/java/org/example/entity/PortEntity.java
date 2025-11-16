@@ -2,6 +2,8 @@ package org.example.entity;
 
 import jakarta.persistence.*;
 
+import java.util.List;
+
 @Entity
 @Table(name = "port")
 public class PortEntity {
@@ -16,9 +18,21 @@ public class PortEntity {
     @Enumerated(EnumType.STRING)
     private PortType type;
 
+    @OneToMany(mappedBy = "sourcePort", cascade = CascadeType.ALL)
+    private List<ConnectorEntity> outgoingConnections;
+
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "component_id")
     private ComponentEntity component;
+
+    public List<ConnectorEntity> getOutgoingConnections() {
+        return outgoingConnections;
+    }
+
+    public void setOutgoingConnections(List<ConnectorEntity> outgoingConnections) {
+        this.outgoingConnections = outgoingConnections;
+    }
 
     public enum PortType {
         INPUT, OUTPUT

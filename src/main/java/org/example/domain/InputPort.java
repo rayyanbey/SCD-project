@@ -1,4 +1,7 @@
 package org.example.domain;
+public class InputPort extends Port {
 
-public class InputPort {
+    public InputPort(Component parent) {
+        super(parent);
+    }
 }
