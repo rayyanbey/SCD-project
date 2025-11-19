@@ -6,13 +6,13 @@ import java.awt.event.ActionListener;
 
 public class ComponentPaletteView extends JPanel {
 
-    private String[] types = {"AND","OR","NOT","XOR","NAND","NOR","SWITCH","LED","CLOCK"};
+    private final String[] TYPES = {"AND","OR","NOT","XOR","NAND","NOR","SWITCH","LED","CLOCK"};
     private ActionListener listener;
 
     public ComponentPaletteView() {
-        setPreferredSize(new Dimension(120, 800));
-        setLayout(new GridLayout(types.length, 1, 4, 4));
-        for (String t : types) {
+        setPreferredSize(new Dimension(140, 800));
+        setLayout(new GridLayout(TYPES.length, 1, 6, 6));
+        for (String t : TYPES) {
             JButton b = new JButton(t);
             b.setActionCommand(t);
             b.addActionListener(e -> {

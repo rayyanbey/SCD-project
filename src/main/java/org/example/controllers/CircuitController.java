@@ -22,6 +22,7 @@ public class CircuitController {
             return;
         }
 
-        editorView.loadCircuit(entity);
+
+        editorView.loadFromDb();
     }
 }

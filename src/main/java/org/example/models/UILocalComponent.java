@@ -14,6 +14,8 @@ public class UILocalComponent {
     public int rotation;
     public List<PortEntity> ports = new ArrayList<>(); // port entities mapped when loaded
 
-    // UI runtime field
-    public boolean highlighted = false;
+
+    // runtime flags
+    public boolean selected = false;
+    public boolean ledLit = false;
 }
