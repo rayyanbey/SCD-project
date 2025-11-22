@@ -23,6 +23,6 @@ public class CircuitController {
         }
 
 
-        editorView.loadFromDb();
+        editorView.loadFromDB();
     }
 }

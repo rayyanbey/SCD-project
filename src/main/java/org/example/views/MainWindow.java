@@ -22,7 +22,7 @@ public class MainWindow extends JFrame {
     public MainWindow(MainController controller) {
 
         setTitle("LogiSim - Logic Simulator");
-        setSize(1300, 800);
+        setSize(1300, 1300);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
         setLocationRelativeTo(null);
@@ -67,6 +67,24 @@ public class MainWindow extends JFrame {
         // SIMULATE BUTTON → Trigger canvas update
         // ==================================================
         simulationPanel.setOnSimulate(() -> circuitEditor.runSimulationAndRefresh());
+
+        projectExplorer.setOnCircuitSelected(circuit -> {
+            if (circuit == null) return;
+            long cid = circuit.getId();
+            // recreate editor and sim panel for that circuit
+            remove(circuitEditor);
+            remove(simulationPanel);
+
+            circuitEditor = new org.example.views.CircuitEditorView(cid);
+            simulationPanel = new org.example.views.SimulationPanel(cid);
+
+            simulationPanel.setOnSimulate(() -> circuitEditor.runSimulationAndRefresh());
+
+            add(circuitEditor, BorderLayout.CENTER);
+            add(simulationPanel, BorderLayout.EAST);
+            revalidate();
+            repaint();
+        });
 
         setVisible(true);
     }

@@ -6,6 +6,8 @@ import org.example.entity.ConnectorEntity;
 import org.example.entity.PortEntity;
 import org.example.repositories.ConnectorRepository;
 
+import java.util.List;
+
 public class ConnectorService {
 
     private final EntityManager em;
@@ -27,4 +29,22 @@ public class ConnectorService {
     public void deleteConnector(Long id) {
         repo.delete(id);
     }
+
+    public List<ConnectorEntity> getIncomingConnections(Long portId) {
+        String jpql = "SELECT c FROM ConnectorEntity c WHERE c.destPort.id = :pid";
+
+        return em.createQuery(jpql, ConnectorEntity.class)
+                .setParameter("pid", portId)
+                .getResultList();
+    }
+
+    public List<ConnectorEntity> getOutgoingConnections(Long portId) {
+        String jpql = "SELECT c FROM ConnectorEntity c WHERE c.sourcePort.id = :pid";
+
+        return em.createQuery(jpql, ConnectorEntity.class)
+                .setParameter("pid", portId)
+                .getResultList();
+    }
+
+
 }

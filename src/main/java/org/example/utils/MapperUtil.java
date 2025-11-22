@@ -81,24 +81,32 @@ public class MapperUtil {
 
         String type = ce.getType().toUpperCase();
 
-        return switch (type) {
-            case "AND" -> new AndGate();
-            case "OR" -> new OrGate();
-            case "NOT" -> new NotGate();
-            case "XOR" -> new XorGate();
-            case "NAND" -> new NandGate();
-            case "NOR" -> new NorGate();
-            case "SWITCH" -> new Switch();
-            case "LED" -> new LED();
-            case "SUBCIRCUIT" -> throw new RuntimeException("SUBCIRCUIT components are not supported yet: " + ce.getId());
-            default -> throw new RuntimeException("Unknown component type: " + type);
-        };
+        switch (type) {
+            case "AND": return new AndGate();
+            case "OR": return new OrGate();
+            case "NOT": return new NotGate();
+            case "XOR": return new XorGate();
+            case "NAND": return new NandGate();
+            case "NOR": return new NorGate();
+            case "SWITCH": {
+                Switch sw = new Switch();
+                // if entity stores initial switch state, apply it to domain output
+                if (ce.getSwitchState() != null) sw.setOn(ce.getSwitchState());
+                return sw;
+            }
+            case "LED": return new LED();
+            case "CLOCK": {
+                // if you saved a period value on the entity, use it
+                int period = (ce.getClockPeriod() == null) ? 1 : ce.getClockPeriod();
+                ClockSource clk = new ClockSource(period);
+                return clk;
+            }
+            default:
+                throw new RuntimeException("Unknown component type: " + type);
+        }
     }
 
-    /**
-     * Optional – convert Domain -> Entity for saving positions, labels, etc.
-     * Does NOT save simulation values.
-     */
+
     public static void updateEntityFromDomain(ComponentEntity ce, Component domain) {
         ce.setLabel(domain.getLabel());
         // Could map more fields like posX, posY when implementing UI

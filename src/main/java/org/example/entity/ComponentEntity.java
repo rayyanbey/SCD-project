@@ -24,6 +24,9 @@ public class ComponentEntity {
 
     private int rotation;
 
+
+
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "subcircuit_ref")
     private CircuitEntity subcircuitReference;
@@ -32,6 +35,28 @@ public class ComponentEntity {
     private List<PortEntity> ports = new ArrayList<>();
 
     public ComponentEntity() {}
+
+
+    // persist clock period (optional)
+    @Column(name = "clock_period")
+    private Integer clockPeriod;
+
+    // persist switch state (for SWITCH component)
+    @Column(name = "switch_state")
+    private Boolean switchState = false;
+
+    // getters / setters
+    public Integer getClockPeriod() { return clockPeriod; }
+    public void setClockPeriod(Integer clockPeriod) { this.clockPeriod = clockPeriod; }
+
+    public Boolean getSwitchState() { return switchState; }
+    public void setSwitchState(Boolean switchState) { this.switchState = switchState; }
+
+    // convenience boolean getter
+    public boolean isSwitchState() {
+        return Boolean.TRUE.equals(this.switchState);
+    }
+
 
     public Long getId() {
         return id;
