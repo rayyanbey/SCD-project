@@ -7,17 +7,14 @@ import org.example.domain.gates.OrGate;
 import org.example.domain.io.LED;
 import org.example.domain.io.Switch;
 import org.example.simulations.CircuitSimulator;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class SimulationTest {
 
-    public static void main(String[] args) {
-        testAndGate();
-        testOrGate();
-        testComplexCircuit();
-    }
-
-    private static void testAndGate() {
-        System.out.println("=== Testing AND Gate ===");
+    @Test
+    public void testAndGate() {
         Circuit circuit = new Circuit();
         Switch s1 = new Switch(); s1.setId("S1");
         Switch s2 = new Switch(); s2.setId("S2");
@@ -36,21 +33,21 @@ public class SimulationTest {
         // 0 0 -> 0
         s1.setOn(false); s2.setOn(false);
         sim.run(circuit);
-        System.out.println("0 AND 0 = " + led.isLit());
+        assertFalse(led.isLit(), "0 AND 0 should be false");
 
         // 1 0 -> 0
         s1.setOn(true); s2.setOn(false);
         sim.run(circuit);
-        System.out.println("1 AND 0 = " + led.isLit());
+        assertFalse(led.isLit(), "1 AND 0 should be false");
 
         // 1 1 -> 1
         s1.setOn(true); s2.setOn(true);
         sim.run(circuit);
-        System.out.println("1 AND 1 = " + led.isLit());
+        assertTrue(led.isLit(), "1 AND 1 should be true");
     }
 
-    private static void testOrGate() {
-        System.out.println("\n=== Testing OR Gate ===");
+    @Test
+    public void testOrGate() {
         Circuit circuit = new Circuit();
         Switch s1 = new Switch();
         Switch s2 = new Switch();
@@ -67,15 +64,15 @@ public class SimulationTest {
 
         s1.setOn(false); s2.setOn(false);
         sim.run(circuit);
-        System.out.println("0 OR 0 = " + led.isLit());
+        assertFalse(led.isLit(), "0 OR 0 should be false");
 
         s1.setOn(true); s2.setOn(false);
         sim.run(circuit);
-        System.out.println("1 OR 0 = " + led.isLit());
+        assertTrue(led.isLit(), "1 OR 0 should be true");
     }
 
-    private static void testComplexCircuit() {
-        System.out.println("\n=== Testing Complex (NOT(A) AND B) ===");
+    @Test
+    public void testComplexCircuit() {
         Circuit circuit = new Circuit();
         Switch a = new Switch(); a.setId("A");
         Switch b = new Switch(); b.setId("B");
@@ -100,11 +97,11 @@ public class SimulationTest {
         // A=0, B=1 => NOT(0) AND 1 => 1 AND 1 => 1
         a.setOn(false); b.setOn(true);
         sim.run(circuit);
-        System.out.println("NOT(0) AND 1 = " + led.isLit());
+        assertTrue(led.isLit(), "NOT(0) AND 1 should be true");
 
         // A=1, B=1 => NOT(1) AND 1 => 0 AND 1 => 0
         a.setOn(true); b.setOn(true);
         sim.run(circuit);
-        System.out.println("NOT(1) AND 1 = " + led.isLit());
+        assertFalse(led.isLit(), "NOT(1) AND 1 should be false");
     }
 }

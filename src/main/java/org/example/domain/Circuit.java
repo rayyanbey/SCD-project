@@ -12,6 +12,11 @@ public class Circuit {
         components.add(c);
     }
 
+    // Alias for test compatibility
+    public void add(Component c) {
+        addComponent(c);
+    }
+
     public void addConnector(Connector conn) {
         connectors.add(conn);
     }
