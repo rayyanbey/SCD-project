@@ -32,7 +32,6 @@ public class ConnectorService {
 
     public List<ConnectorEntity> getIncomingConnections(Long portId) {
         String jpql = "SELECT c FROM ConnectorEntity c WHERE c.destPort.id = :pid";
-
         return em.createQuery(jpql, ConnectorEntity.class)
                 .setParameter("pid", portId)
                 .getResultList();
@@ -46,5 +45,11 @@ public class ConnectorService {
                 .getResultList();
     }
 
+    public void updateConnector(ConnectorEntity c) {
+        repo.update(c);
+    }
 
+    public List<ConnectorEntity> getConnectorsForCircuit(Long circuitId) {
+        return repo.findAllByCircuitId(circuitId);
+    }
 }

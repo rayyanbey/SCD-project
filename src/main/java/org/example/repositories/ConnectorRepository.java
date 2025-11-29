@@ -1,7 +1,10 @@
 package org.example.repositories;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
 import org.example.entity.ConnectorEntity;
+
+import java.util.List;
 
 public class ConnectorRepository {
 
@@ -28,5 +31,18 @@ public class ConnectorRepository {
         em.getTransaction().begin();
         em.remove(c);
         em.getTransaction().commit();
+    }
+
+    public void update(ConnectorEntity conn) {
+        em.getTransaction().begin();
+        em.merge(conn);
+        em.getTransaction().commit();
+    }
+
+    public List<ConnectorEntity> findAllByCircuitId(Long circuitId) {
+        String jpql = "SELECT c FROM ConnectorEntity c WHERE c.sourcePort.component.circuit.id = :cid";
+        TypedQuery<ConnectorEntity> q = em.createQuery(jpql, ConnectorEntity.class);
+        q.setParameter("cid", circuitId);
+        return q.getResultList();
     }
 }

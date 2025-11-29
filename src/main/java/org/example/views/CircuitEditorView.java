@@ -97,6 +97,20 @@ public class CircuitEditorView extends JPanel {
         JMenuItem delWire = new JMenuItem("Delete Wire");
         delWire.addActionListener(e -> deleteSelectedWire());
         wireMenu.add(delWire);
+
+        JMenuItem colorWire = new JMenuItem("Change Color");
+        colorWire.addActionListener(e -> {
+            if (clickedWire != null) {
+                Color newColor = JColorChooser.showDialog(this, "Choose Wire Color", parseColor(clickedWire.getColor()));
+                if (newColor != null) {
+                    String hex = String.format("#%02x%02x%02x", newColor.getRed(), newColor.getGreen(), newColor.getBlue());
+                    clickedWire.setColor(hex);
+                    connectorService.updateConnector(clickedWire); // Need to ensure this method exists or use save
+                    loadFromDB();
+                }
+            }
+        });
+        wireMenu.add(colorWire);
     }
 
     // =================== MOUSE EVENTS ===================
@@ -153,11 +167,7 @@ public class CircuitEditorView extends JPanel {
             components.add(u);
         }
 
-        for (UILocalComponent u : components) {
-            for (PortEntity p : u.ports) {
-                connectors.addAll(connectorService.getOutgoingConnections(p.getId()));
-            }
-        }
+        connectors.addAll(connectorService.getConnectorsForCircuit(circuitId));
 
         repaint();
     }
@@ -323,11 +333,11 @@ public class CircuitEditorView extends JPanel {
 
         // draw connectors/wires
         g.setStroke(new BasicStroke(2));
-        g.setColor(Color.BLACK);
         for (ConnectorEntity c : connectors) {
             Point s = getPortPosition(c.getSourcePort());
             Point d = getPortPosition(c.getDestPort());
             if (s != null && d != null) {
+                g.setColor(parseColor(c.getColor()));
                 g.drawLine(s.x, s.y, d.x, d.y);
             }
         }
@@ -621,6 +631,10 @@ public class CircuitEditorView extends JPanel {
     // =================== SIMULATION REFRESH ===================
     // =========================================================
 
+    // =========================================================
+    // =================== SIMULATION REFRESH ===================
+    // =========================================================
+
     /**
      * Run backend simulation and refresh LED visuals (sets UILocalComponent.ledLit).
      */
@@ -639,6 +653,40 @@ public class CircuitEditorView extends JPanel {
             u.ledLit = (u.id != null) && Boolean.TRUE.equals(ledMap.get(String.valueOf(u.id)));
         }
         repaint();
+    }
+
+    // =========================================================
+    // =================== EXPORT TO IMAGE ======================
+    // =========================================================
+
+    public void exportToImage(java.io.File file) {
+        int w = getWidth();
+        int h = getHeight();
+        java.awt.image.BufferedImage bi = new java.awt.image.BufferedImage(w, h, java.awt.image.BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = bi.createGraphics();
+        this.paint(g2d);
+        g2d.dispose();
+
+        try {
+            ImageIO.write(bi, "png", file);
+            JOptionPane.showMessageDialog(this, "Image exported successfully to " + file.getAbsolutePath());
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Error exporting image: " + e.getMessage());
+        }
+    }
+
+    private Color parseColor(String colorName) {
+        if (colorName == null) return Color.BLACK;
+        try {
+            return Color.decode(colorName);
+        } catch (NumberFormatException e) {
+            // Fallback for named colors if stored as names
+            if ("red".equalsIgnoreCase(colorName)) return Color.RED;
+            if ("blue".equalsIgnoreCase(colorName)) return Color.BLUE;
+            if ("green".equalsIgnoreCase(colorName)) return Color.GREEN;
+            return Color.BLACK;
+        }
     }
 }
 

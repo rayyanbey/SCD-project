@@ -71,6 +71,8 @@ public class MainWindow extends JFrame {
         projectExplorer.setOnCircuitSelected(circuit -> {
             if (circuit == null) return;
             long cid = circuit.getId();
+            if (cid == currentCircuitId && circuitEditor != null) return;
+            currentCircuitId = cid;
             // recreate editor and sim panel for that circuit
             remove(circuitEditor);
             remove(simulationPanel);
@@ -79,12 +81,54 @@ public class MainWindow extends JFrame {
             simulationPanel = new org.example.views.SimulationPanel(cid);
 
             simulationPanel.setOnSimulate(() -> circuitEditor.runSimulationAndRefresh());
+            simulationPanel.setOnExport(() -> {
+                JFileChooser fileChooser = new JFileChooser();
+                fileChooser.setDialogTitle("Export Circuit Image");
+                if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+                    java.io.File file = fileChooser.getSelectedFile();
+                    if (!file.getName().toLowerCase().endsWith(".png")) {
+                        file = new java.io.File(file.getAbsolutePath() + ".png");
+                    }
+                    circuitEditor.exportToImage(file);
+                }
+            });
 
             add(circuitEditor, BorderLayout.CENTER);
             add(simulationPanel, BorderLayout.EAST);
             revalidate();
             repaint();
         });
+
+        // ==================================================
+        // MENU BAR
+        // ==================================================
+        JMenuBar menuBar = new JMenuBar();
+        JMenu fileMenu = new JMenu("File");
+
+        JMenuItem saveItem = new JMenuItem("Save Project");
+        saveItem.addActionListener(e -> {
+            // In a real app, we might want to trigger a specific save action
+            // For now, since persistence happens on every action, we can just show a confirmation
+            JOptionPane.showMessageDialog(this, "Project Saved (Auto-save is active).");
+        });
+
+        JMenuItem exportItem = new JMenuItem("Export to Image...");
+        exportItem.addActionListener(e -> {
+            JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setDialogTitle("Export Circuit Image");
+            if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+                java.io.File file = fileChooser.getSelectedFile();
+                if (!file.getName().toLowerCase().endsWith(".png")) {
+                    file = new java.io.File(file.getAbsolutePath() + ".png");
+                }
+                circuitEditor.exportToImage(file);
+            }
+        });
+
+        fileMenu.add(saveItem);
+        fileMenu.add(exportItem);
+        menuBar.add(fileMenu);
+        setJMenuBar(menuBar);
 
         setVisible(true);
     }
