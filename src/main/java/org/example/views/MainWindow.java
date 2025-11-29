@@ -105,6 +105,24 @@ public class MainWindow extends JFrame {
         JMenuBar menuBar = new JMenuBar();
         JMenu fileMenu = new JMenu("File");
 
+        JMenuItem openProjectItem = new JMenuItem("Open Project...");
+        openProjectItem.addActionListener(e -> {
+            java.util.List<org.example.entity.ProjectEntity> projects = new org.example.services.ProjectService().getAllProjects();
+            if (projects == null || projects.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "No projects found.");
+                return;
+            }
+            Object[] options = projects.stream().map(org.example.entity.ProjectEntity::getName).toArray();
+            String selected = (String) JOptionPane.showInputDialog(this, "Select Project:", "Open Project", JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+            if (selected != null) {
+                // Find and select in tree
+                // Since ProjectExplorerView handles selection logic, we might just want to expand the tree or something.
+                // But for now, let's just reload the explorer which is simple.
+                projectExplorer.reloadAll();
+            }
+        });
+        fileMenu.add(openProjectItem);
+
         JMenuItem saveItem = new JMenuItem("Save Project");
         saveItem.addActionListener(e -> {
             // In a real app, we might want to trigger a specific save action

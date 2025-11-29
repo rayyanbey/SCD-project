@@ -152,6 +152,7 @@ public class CircuitEditorView extends JPanel {
         components.clear();
         connectors.clear();
 
+        circuitService.clearCache();
         CircuitEntity entity = circuitService.getCircuit(circuitId);
         if (entity == null) return;
 
@@ -537,8 +538,7 @@ public class CircuitEditorView extends JPanel {
             for (ConnectorEntity c : incoming) {
                 connectorService.deleteConnector(c.getId());
             }
-            // delete port
-            portService.deletePort(p.getId());
+            // Port deletion is handled by CascadeType.ALL on ComponentEntity
         }
 
         // delete component entity
@@ -664,6 +664,11 @@ public class CircuitEditorView extends JPanel {
         int h = getHeight();
         java.awt.image.BufferedImage bi = new java.awt.image.BufferedImage(w, h, java.awt.image.BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2d = bi.createGraphics();
+        
+        // Fill white background
+        g2d.setColor(Color.WHITE);
+        g2d.fillRect(0, 0, w, h);
+        
         this.paint(g2d);
         g2d.dispose();
 

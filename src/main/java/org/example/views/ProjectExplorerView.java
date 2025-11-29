@@ -8,6 +8,8 @@ import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -41,7 +43,44 @@ public class ProjectExplorerView extends JPanel {
         createBtn.addActionListener(ev -> createProjectDialog());
         add(top, BorderLayout.NORTH);
 
+        // Context menu
+        JPopupMenu popup = new JPopupMenu();
+        JMenuItem newCircuitItem = new JMenuItem("New Circuit");
+        popup.add(newCircuitItem);
+
+        tree.addMouseListener(new MouseAdapter() {
+            public void mousePressed(MouseEvent e) {
+                if (SwingUtilities.isRightMouseButton(e)) {
+                    int row = tree.getClosestRowForLocation(e.getX(), e.getY());
+                    tree.setSelectionRow(row);
+                    DefaultMutableTreeNode node = (DefaultMutableTreeNode) tree.getLastSelectedPathComponent();
+                    if (node != null && node.getUserObject() instanceof ProjectEntity) {
+                        popup.show(e.getComponent(), e.getX(), e.getY());
+                    }
+                }
+            }
+        });
+
+        newCircuitItem.addActionListener(e -> {
+            DefaultMutableTreeNode node = (DefaultMutableTreeNode) tree.getLastSelectedPathComponent();
+            if (node != null && node.getUserObject() instanceof ProjectEntity) {
+                ProjectEntity p = (ProjectEntity) node.getUserObject();
+                createCircuitDialog(p);
+            }
+        });
+
         reloadAll();
+    }
+
+    private void createCircuitDialog(ProjectEntity p) {
+        String name = JOptionPane.showInputDialog(this, "Enter Circuit Name:");
+        if (name != null && !name.trim().isEmpty()) {
+            CircuitEntity c = new CircuitEntity();
+            c.setName(name);
+            c.setProject(p);
+            new org.example.services.CircuitService().saveCircuit(c);
+            reloadAll();
+        }
     }
 
     public void setOnCircuitSelected(Consumer<CircuitEntity> cb) {

@@ -28,9 +28,7 @@ public class Main {
 
             // Create controller
             MainController controller = new MainController();
-
-            // Launch main window
-            new MainWindow(controller).setVisible(true);
+            controller.start();
         });
     }
 }
