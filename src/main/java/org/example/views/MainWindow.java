@@ -107,57 +107,64 @@ public class MainWindow extends JFrame {
 
         JMenuItem openProjectItem = new JMenuItem("Open Project...");
         openProjectItem.addActionListener(e -> {
-            java.util.List<org.example.entity.ProjectEntity> projects = new org.example.services.ProjectService().getAllProjects();
-            if (projects == null || projects.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "No projects found.");
-                return;
-            }
-            
-            // Create a custom dialog for project selection
-            JDialog dialog = new JDialog(this, "Open Project", true);
-            dialog.setLayout(new BorderLayout());
-            dialog.setSize(400, 300);
-            dialog.setLocationRelativeTo(this);
-
-            DefaultListModel<org.example.entity.ProjectEntity> listModel = new DefaultListModel<>();
-            projects.forEach(listModel::addElement);
-            
-            JList<org.example.entity.ProjectEntity> list = new JList<>(listModel);
-            list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-            list.setCellRenderer(new DefaultListCellRenderer() {
-                @Override
-                public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-                    super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                    if (value instanceof org.example.entity.ProjectEntity) {
-                        setText(((org.example.entity.ProjectEntity) value).getName());
+            org.example.utils.LoadingUtil.executeWithLoading(this, "Fetching Projects...", () -> {
+                // Fetch projects in background
+                java.util.List<org.example.entity.ProjectEntity> projects = new org.example.services.ProjectService().getAllProjects();
+                
+                // Show dialog on EDT
+                SwingUtilities.invokeLater(() -> {
+                    if (projects == null || projects.isEmpty()) {
+                        JOptionPane.showMessageDialog(this, "No projects found.");
+                        return;
                     }
-                    return this;
-                }
-            });
+                    
+                    // Create a custom dialog for project selection
+                    JDialog dialog = new JDialog(this, "Open Project", true);
+                    dialog.setLayout(new BorderLayout());
+                    dialog.setSize(400, 300);
+                    dialog.setLocationRelativeTo(this);
 
-            dialog.add(new JScrollPane(list), BorderLayout.CENTER);
+                    DefaultListModel<org.example.entity.ProjectEntity> listModel = new DefaultListModel<>();
+                    projects.forEach(listModel::addElement);
+                    
+                    JList<org.example.entity.ProjectEntity> list = new JList<>(listModel);
+                    list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+                    list.setCellRenderer(new DefaultListCellRenderer() {
+                        @Override
+                        public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                            super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                            if (value instanceof org.example.entity.ProjectEntity) {
+                                setText(((org.example.entity.ProjectEntity) value).getName());
+                            }
+                            return this;
+                        }
+                    });
 
-            JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-            JButton openBtn = new JButton("Open");
-            JButton cancelBtn = new JButton("Cancel");
-            
-            openBtn.addActionListener(ev -> {
-                org.example.entity.ProjectEntity selected = list.getSelectedValue();
-                if (selected != null) {
-                    projectExplorer.selectProjectAndFirstCircuit(selected);
-                    dialog.dispose();
-                } else {
-                    JOptionPane.showMessageDialog(dialog, "Please select a project.");
-                }
-            });
-            
-            cancelBtn.addActionListener(ev -> dialog.dispose());
-            
-            btnPanel.add(openBtn);
-            btnPanel.add(cancelBtn);
-            dialog.add(btnPanel, BorderLayout.SOUTH);
-            
-            dialog.setVisible(true);
+                    dialog.add(new JScrollPane(list), BorderLayout.CENTER);
+
+                    JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+                    JButton openBtn = new JButton("Open");
+                    JButton cancelBtn = new JButton("Cancel");
+                    
+                    openBtn.addActionListener(ev -> {
+                        org.example.entity.ProjectEntity selected = list.getSelectedValue();
+                        if (selected != null) {
+                            projectExplorer.selectProjectAndFirstCircuit(selected);
+                            dialog.dispose();
+                        } else {
+                            JOptionPane.showMessageDialog(dialog, "Please select a project.");
+                        }
+                    });
+                    
+                    cancelBtn.addActionListener(ev -> dialog.dispose());
+                    
+                    btnPanel.add(openBtn);
+                    btnPanel.add(cancelBtn);
+                    dialog.add(btnPanel, BorderLayout.SOUTH);
+                    
+                    dialog.setVisible(true);
+                });
+            }, null);
         });
         fileMenu.add(openProjectItem);
 

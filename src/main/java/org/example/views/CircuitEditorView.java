@@ -350,328 +350,23 @@ public class CircuitEditorView extends JPanel {
                 wireCurrent = click;
             }
         } else {
-            if (port.getType() == PortEntity.PortType.INPUT) {
-                connectorService.connectPorts(wireStart, port, "black");
-                loadFromDB();
-            }
-            wireStart = null;
-            wireCurrent = null;
-        }
-    }
-
-    // =========================================================
-    // =================== PAINT & HELPERS ======================
-    // =========================================================
-
-    @Override
-    protected void paintComponent(Graphics g0) {
-        super.paintComponent(g0);
-        Graphics2D g = (Graphics2D) g0;
-        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-        // draw connectors/wires
-        g.setStroke(new BasicStroke(2));
-        for (ConnectorEntity c : connectors) {
-            Point s = getPortPosition(c.getSourcePort());
-            Point d = getPortPosition(c.getDestPort());
-            if (s != null && d != null) {
-                g.setColor(parseColor(c.getColor()));
-                g.drawLine(s.x, s.y, d.x, d.y);
-            }
-        }
-
-        // draw temporary wire while drawing
-        if (wireStart != null && wireCurrent != null) {
-            Point s = getPortPosition(wireStart);
-            if (s != null) {
-                g.setColor(Color.GRAY);
-                g.drawLine(s.x, s.y, wireCurrent.x, wireCurrent.y);
-            }
-        }
-
-        // draw components (icons or fallback)
-        for (UILocalComponent u : components) {
-            int cx = u.x;
-            int cy = u.y;
-
-            Image icon = icons.get(u.type != null ? u.type.toUpperCase() : null);
-            if (icon != null) {
-                g.drawImage(icon, cx - COMP_W / 2, cy - COMP_H / 2, COMP_W, COMP_H, this);
+            if (port.getType() == PortEntity.PortType.INPUT && !port.getComponent().getId().equals(wireStart.getComponent().getId())) {
+                // Create connection
+                org.example.utils.LoadingUtil.executeWithLoading(this, "Connecting...", () -> {
+                    connectorService.connectPorts(wireStart, port, "#000000");
+                }, () -> {
+                    wireStart = null;
+                    wireCurrent = null;
+                    loadFromDB();
+                });
             } else {
-                g.setColor(new Color(245,245,245));
-                g.fillRoundRect(cx - COMP_W/2, cy - COMP_H/2, COMP_W, COMP_H, 12, 12);
-                g.setColor(Color.DARK_GRAY);
-                g.drawRoundRect(cx - COMP_W/2, cy - COMP_H/2, COMP_W, COMP_H, 12, 12);
-                g.setFont(g.getFont().deriveFont(Font.BOLD, 12f));
-                g.drawString(u.type == null ? "?" : u.type, cx - COMP_W/4, cy);
-            }
-
-            // selection border
-            if (u.selected) {
-                g.setColor(Color.ORANGE);
-                g.setStroke(new BasicStroke(2));
-                g.drawRoundRect(cx - COMP_W/2 - 3, cy - COMP_H/2 - 3, COMP_W + 6, COMP_H + 6, 12, 12);
-            }
-
-            // LED indicator if lit
-            if ("LED".equalsIgnoreCase(u.type) && u.ledLit) {
-                g.setColor(Color.GREEN.darker());
-                g.fillOval(cx + COMP_W/2 - 18, cy - 12, 16, 16);
-            }
-
-            // draw ports: inputs on left, outputs on right
-            List<PortEntity> ins = new ArrayList<>();
-            List<PortEntity> outs = new ArrayList<>();
-            for (PortEntity p : u.ports) {
-                if (p.getType() == PortEntity.PortType.INPUT) ins.add(p);
-                else outs.add(p);
-            }
-
-            for (int i = 0; i < ins.size(); i++) {
-                int py = cy - (ins.size()-1)*12 + i*24;
-                int px = cx - COMP_W/2 - PORT_R - 2;
-                g.setColor(Color.BLUE.darker());
-                g.fillOval(px - PORT_R, py - PORT_R, PORT_R*2, PORT_R*2);
-            }
-
-            for (int i = 0; i < outs.size(); i++) {
-                int py = cy - (outs.size()-1)*12 + i*24;
-                int px = cx + COMP_W/2 + PORT_R + 2;
-                g.setColor(Color.RED.darker());
-                g.fillOval(px - PORT_R, py - PORT_R, PORT_R*2, PORT_R*2);
+                // Cancel wire
+                wireStart = null;
+                wireCurrent = null;
+                repaint();
             }
         }
     }
-
-    /**
-     * Find the UILocalComponent whose bounding box contains the given point.
-     */
-    private UILocalComponent findComponentAtPoint(Point p) {
-        for (int i = components.size() - 1; i >= 0; i--) {
-            UILocalComponent u = components.get(i);
-            Rectangle r = new Rectangle(u.x - COMP_W/2, u.y - COMP_H/2, COMP_W, COMP_H);
-            if (r.contains(p)) return u;
-        }
-        return null;
-    }
-
-    /**
-     * Find a PortEntity at the canvas point (hit test).
-     */
-    private PortEntity findPortAtPoint(Point p) {
-        for (UILocalComponent u : components) {
-            List<PortEntity> ins = new ArrayList<>(), outs = new ArrayList<>();
-            for (PortEntity pe : u.ports) {
-                if (pe.getType() == PortEntity.PortType.INPUT) ins.add(pe);
-                else outs.add(pe);
-            }
-
-            for (int i = 0; i < ins.size(); i++) {
-                int py = u.y - (ins.size()-1)*12 + i*24;
-                int px = u.x - COMP_W/2 - PORT_R - 2;
-                Rectangle pr = new Rectangle(px - PORT_R, py - PORT_R, PORT_R*2, PORT_R*2);
-                if (pr.contains(p)) return ins.get(i);
-            }
-
-            for (int i = 0; i < outs.size(); i++) {
-                int py = u.y - (outs.size()-1)*12 + i*24;
-                int px = u.x + COMP_W/2 + PORT_R + 2;
-                Rectangle pr = new Rectangle(px - PORT_R, py - PORT_R, PORT_R*2, PORT_R*2);
-                if (pr.contains(p)) return outs.get(i);
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Compute canvas coordinates of a PortEntity.
-     */
-    private Point getPortPosition(PortEntity port) {
-        for (UILocalComponent u : components) {
-            for (PortEntity pe : u.ports) {
-                if (pe.getId().equals(port.getId())) {
-                    List<PortEntity> ins = new ArrayList<>(), outs = new ArrayList<>();
-                    for (PortEntity p : u.ports) {
-                        if (p.getType() == PortEntity.PortType.INPUT) ins.add(p);
-                        else outs.add(p);
-                    }
-                    if (port.getType() == PortEntity.PortType.INPUT) {
-                        int idx = ins.indexOf(port);
-                        int py = u.y - (ins.size()-1)*12 + idx*24;
-                        int px = u.x - COMP_W/2 - PORT_R - 2;
-                        return new Point(px, py);
-                    } else {
-                        int idx = outs.indexOf(port);
-                        int py = u.y - (outs.size()-1)*12 + idx*24;
-                        int px = u.x + COMP_W/2 + PORT_R + 2;
-                        return new Point(px, py);
-                    }
-                }
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Find a wire (connector) near the point (line hit test).
-     */
-    private ConnectorEntity findWireAtPoint(Point p) {
-        for (ConnectorEntity c : connectors) {
-            Point s = getPortPosition(c.getSourcePort());
-            Point d = getPortPosition(c.getDestPort());
-            if (s == null || d == null) continue;
-            double dist = ptLineDist(s.x, s.y, d.x, d.y, p.x, p.y);
-            if (dist < 6) return c;
-        }
-        return null;
-    }
-
-    /**
-     * Distance from point to line segment.
-     */
-    private double ptLineDist(int x1, int y1, int x2, int y2, int px, int py) {
-        double A = px - x1;
-        double B = py - y1;
-        double C = x2 - x1;
-        double D = y2 - y1;
-
-        double dot = A * C + B * D;
-        double lenSq = C * C + D * D;
-        double param = -1;
-        if (lenSq != 0) param = dot / lenSq;
-
-        double xx, yy;
-        if (param < 0) {
-            xx = x1;
-            yy = y1;
-        } else if (param > 1) {
-            xx = x2;
-            yy = y2;
-        } else {
-            xx = x1 + param * C;
-            yy = y1 + param * D;
-        }
-        double dx = px - xx;
-        double dy = py - yy;
-        return Math.sqrt(dx*dx + dy*dy);
-    }
-
-    // =========================================================
-    // =================== DELETE OPERATIONS ====================
-    // =========================================================
-
-    private void deleteSelectedComponent() {
-        if (clickedComponent == null) return;
-        
-        org.example.utils.LoadingUtil.executeWithLoading(this, "Deleting Component...", () -> {
-            // delete connectors attached to ports (outgoing & incoming)
-            for (PortEntity p : clickedComponent.ports) {
-                // outgoing
-                List<ConnectorEntity> outgoing = connectorService.getOutgoingConnections(p.getId());
-                for (ConnectorEntity c : outgoing) {
-                    connectorService.deleteConnector(c.getId());
-                }
-                // incoming
-                List<ConnectorEntity> incoming = connectorService.getIncomingConnections(p.getId());
-                for (ConnectorEntity c : incoming) {
-                    connectorService.deleteConnector(c.getId());
-                }
-                // Port deletion is handled by CascadeType.ALL on ComponentEntity
-            }
-
-            // delete component entity
-            componentService.deleteComponent(clickedComponent.id);
-        }, () -> {
-            // reload
-            loadFromDB();
-            clickedComponent = null;
-            repaint();
-        });
-    }
-
-    private void deleteSelectedWire() {
-        if (clickedWire == null) return;
-        org.example.utils.LoadingUtil.executeWithLoading(this, "Deleting Wire...", () -> {
-            connectorService.deleteConnector(clickedWire.getId());
-        }, () -> {
-            loadFromDB();
-            clickedWire = null;
-            repaint();
-        });
-    }
-
-    // =========================================================
-    // =================== PERSIST / PROPERTIES =================
-    // =========================================================
-
-    private void persistPosition(UILocalComponent u) {
-        if (u.id == null) return;
-        ComponentEntity ce = componentService.getComponent(u.id);
-        if (ce == null) return;
-        ce.setPosX(u.x);
-        ce.setPosY(u.y);
-        componentService.updateComponent(ce);
-    }
-
-    private void openProperties(UILocalComponent u) {
-        if (u == null || u.id == null) return;
-        ComponentEntity ce = componentService.getComponent(u.id);
-        if (ce == null) return;
-
-        JDialog dlg = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Component Properties", true);
-        dlg.setLayout(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(4,4,4,4);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.gridx = 0; gbc.gridy = 0;
-
-        dlg.add(new JLabel("Label:"), gbc);
-        gbc.gridx = 1;
-        JTextField labelField = new JTextField(ce.getLabel() == null ? "" : ce.getLabel(), 20);
-        dlg.add(labelField, gbc);
-
-        gbc.gridx = 0; gbc.gridy++;
-
-        JCheckBox switchStateBox;
-        if ("SWITCH".equalsIgnoreCase(ce.getType())) {
-            dlg.add(new JLabel("Switch On:"), gbc);
-            gbc.gridx = 1;
-            switchStateBox = new JCheckBox();
-            try {
-                switchStateBox.setSelected(ce.isSwitchState());
-            } catch (Exception ignored) {}
-            dlg.add(switchStateBox, gbc);
-            gbc.gridx = 0; gbc.gridy++;
-        } else {
-            switchStateBox = null;
-        }
-
-        // clock period - if your ComponentEntity supports a 'period' property you can add UI here.
-        // Example (uncomment if supported):
-        // if ("CLOCK".equalsIgnoreCase(ce.getType())) { ... }
-
-        JButton saveBtn = new JButton("Save");
-        gbc.gridx = 0; gbc.gridy++; gbc.gridwidth = 2;
-        dlg.add(saveBtn, gbc);
-
-        saveBtn.addActionListener(ev -> {
-            ce.setLabel(labelField.getText());
-            if (switchStateBox != null) {
-                ce.setSwitchState(switchStateBox.isSelected());
-            }
-            componentService.updateComponent(ce);
-            loadFromDB();
-            dlg.dispose();
-        });
-
-        dlg.pack();
-        dlg.setLocationRelativeTo(this);
-        dlg.setVisible(true);
-    }
-
-    // =========================================================
-    // =================== SIMULATION REFRESH ===================
-    // =========================================================
 
     // =========================================================
     // =================== SIMULATION REFRESH ===================
@@ -733,6 +428,169 @@ public class CircuitEditorView extends JPanel {
             if ("blue".equalsIgnoreCase(colorName)) return Color.BLUE;
             if ("green".equalsIgnoreCase(colorName)) return Color.GREEN;
             return Color.BLACK;
+        }
+    }
+
+    // =========================================================
+    // =================== MISSING METHODS ======================
+    // =========================================================
+
+    private void deleteSelectedComponent() {
+        if (clickedComponent == null) return;
+        org.example.utils.LoadingUtil.executeWithLoading(this, "Deleting Component...", () -> {
+            componentService.deleteComponent(clickedComponent.id);
+        }, this::loadFromDB);
+        clickedComponent = null;
+    }
+
+    private void deleteSelectedWire() {
+        if (clickedWire == null) return;
+        org.example.utils.LoadingUtil.executeWithLoading(this, "Deleting Wire...", () -> {
+            connectorService.deleteConnector(clickedWire.getId());
+        }, this::loadFromDB);
+        clickedWire = null;
+    }
+
+    private void persistPosition(UILocalComponent u) {
+        SwingWorker<Void, Void> worker = new SwingWorker<>() {
+            @Override
+            protected Void doInBackground() {
+                ComponentEntity ce = componentService.getComponent(u.id);
+                if (ce != null) {
+                    ce.setPosX(u.x);
+                    ce.setPosY(u.y);
+                    componentService.saveComponent(ce);
+                }
+                return null;
+            }
+        };
+        worker.execute();
+    }
+
+    private void openProperties(UILocalComponent u) {
+        String newLabel = JOptionPane.showInputDialog(this, "Edit Label:", u.label);
+        if (newLabel != null && !newLabel.equals(u.label)) {
+            org.example.utils.LoadingUtil.executeWithLoading(this, "Saving Properties...", () -> {
+                ComponentEntity ce = componentService.getComponent(u.id);
+                if (ce != null) {
+                    ce.setLabel(newLabel);
+                    componentService.saveComponent(ce);
+                }
+            }, this::loadFromDB);
+        }
+    }
+
+    private UILocalComponent findComponentAtPoint(Point p) {
+        for (UILocalComponent u : components) {
+            if (p.x >= u.x && p.x <= u.x + COMP_W && p.y >= u.y && p.y <= u.y + COMP_H) {
+                return u;
+            }
+        }
+        return null;
+    }
+
+    private ConnectorEntity findWireAtPoint(Point p) {
+        for (ConnectorEntity c : connectors) {
+            Point p1 = getPortPosition(c.getSourcePort());
+            Point p2 = getPortPosition(c.getDestPort());
+            double dist = java.awt.geom.Line2D.ptSegDist(p1.x, p1.y, p2.x, p2.y, p.x, p.y);
+            if (dist < 5) return c;
+        }
+        return null;
+    }
+
+    private PortEntity findPortAtPoint(Point p) {
+        for (UILocalComponent u : components) {
+            for (PortEntity port : u.ports) {
+                Point pos = getPortPosition(port);
+                if (p.distance(pos) <= PORT_R + 2) {
+                    return port;
+                }
+            }
+        }
+        return null;
+    }
+
+    private Point getPortPosition(PortEntity p) {
+        if (p == null || p.getComponent() == null) return new Point(0,0);
+        Long compId = p.getComponent().getId();
+        UILocalComponent u = components.stream().filter(c -> c.id.equals(compId)).findFirst().orElse(null);
+        if (u == null) return new Point(0,0);
+
+        int px, py;
+        if (p.getType() == PortEntity.PortType.INPUT) {
+            px = u.x;
+            py = u.y + 15 + (p.getPortIndex() * 20);
+        } else {
+            px = u.x + COMP_W;
+            py = u.y + COMP_H / 2;
+        }
+        return new Point(px, py);
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        Graphics2D g2 = (Graphics2D) g;
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        // Draw wires
+        g2.setStroke(new BasicStroke(2));
+        for (ConnectorEntity c : connectors) {
+            drawWire(g2, c);
+        }
+
+        // Draw current wire
+        if (wireStart != null && wireCurrent != null) {
+            g2.setColor(Color.GRAY);
+            Point p1 = getPortPosition(wireStart);
+            g2.drawLine(p1.x, p1.y, wireCurrent.x, wireCurrent.y);
+        }
+
+        // Draw components
+        for (UILocalComponent u : components) {
+            drawComponent(g2, u);
+        }
+    }
+
+    private void drawWire(Graphics2D g2, ConnectorEntity c) {
+        Point p1 = getPortPosition(c.getSourcePort());
+        Point p2 = getPortPosition(c.getDestPort());
+        g2.setColor(parseColor(c.getColor()));
+        g2.drawLine(p1.x, p1.y, p2.x, p2.y);
+    }
+
+    private void drawComponent(Graphics2D g2, UILocalComponent u) {
+        // Draw body
+        g2.setColor(Color.WHITE);
+        g2.fillRect(u.x, u.y, COMP_W, COMP_H);
+        g2.setColor(u.selected ? Color.BLUE : Color.BLACK);
+        g2.drawRect(u.x, u.y, COMP_W, COMP_H);
+
+        // Draw Icon
+        Image icon = icons.get(u.type);
+        if (icon != null) {
+            g2.drawImage(icon, u.x + 5, u.y + 5, COMP_W - 10, COMP_H - 10, null);
+        } else {
+            g2.drawString(u.type, u.x + 5, u.y + 20);
+        }
+
+        // Draw Label
+        if (u.label != null) {
+            g2.drawString(u.label, u.x, u.y - 5);
+        }
+
+        // Draw Ports
+        for (PortEntity p : u.ports) {
+            Point pos = getPortPosition(p);
+            g2.setColor(Color.BLACK);
+            g2.fillOval(pos.x - PORT_R/2, pos.y - PORT_R/2, PORT_R, PORT_R);
+        }
+        
+        // Draw LED state
+        if (u.ledLit) {
+             g2.setColor(Color.RED);
+             g2.fillOval(u.x + COMP_W - 15, u.y + 5, 10, 10);
         }
     }
 }

@@ -40,7 +40,12 @@ public class ConnectorRepository {
     }
 
     public List<ConnectorEntity> findAllByCircuitId(Long circuitId) {
-        String jpql = "SELECT c FROM ConnectorEntity c WHERE c.sourcePort.component.circuit.id = :cid";
+        String jpql = "SELECT c FROM ConnectorEntity c " +
+                      "JOIN FETCH c.sourcePort sp " +
+                      "JOIN FETCH sp.component spc " +
+                      "JOIN FETCH c.destPort dp " +
+                      "JOIN FETCH dp.component dpc " +
+                      "WHERE spc.circuit.id = :cid";
         TypedQuery<ConnectorEntity> q = em.createQuery(jpql, ConnectorEntity.class);
         q.setParameter("cid", circuitId);
         return q.getResultList();
