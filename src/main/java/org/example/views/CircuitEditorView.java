@@ -185,13 +185,18 @@ public class CircuitEditorView extends JPanel {
     }
 
     // =================== LOAD FROM DB ===================
+    // =================== LOAD FROM DB ===================
     public void loadFromDB() {
         org.example.utils.LoadingUtil.executeWithLoading(this, "Loading Circuit...", () -> {
+            // Create fresh services for background thread
+            CircuitService localCircuitService = new CircuitService();
+            ConnectorService localConnectorService = new ConnectorService();
+            
             components.clear();
             connectors.clear();
 
-            circuitService.clearCache();
-            CircuitEntity entity = circuitService.getCircuit(circuitId);
+            // No need to clear cache of local service
+            CircuitEntity entity = localCircuitService.getCircuit(circuitId);
             if (entity == null) return;
 
             for (ComponentEntity ce : entity.getComponents()) {
@@ -206,7 +211,7 @@ public class CircuitEditorView extends JPanel {
                 components.add(u);
             }
 
-            connectors.addAll(connectorService.getConnectorsForCircuit(circuitId));
+            connectors.addAll(localConnectorService.getConnectorsForCircuit(circuitId));
         }, this::repaint);
     }
 
@@ -220,39 +225,43 @@ public class CircuitEditorView extends JPanel {
 
     private void placeNewComponent(String type, int x, int y) {
         org.example.utils.LoadingUtil.executeWithLoading(this, "Placing Component...", () -> {
+            CircuitService localCircuitService = new CircuitService();
+            ComponentService localComponentService = new ComponentService();
+            PortService localPortService = new PortService();
+
             ComponentEntity ce = new ComponentEntity();
             ce.setType(type);
             ce.setLabel(type);
             ce.setPosX(x);
             ce.setPosY(y);
             ce.setRotation(0);
-            ce.setCircuit(circuitService.getCircuit(circuitId));
+            ce.setCircuit(localCircuitService.getCircuit(circuitId));
 
-            componentService.saveComponent(ce);
+            localComponentService.saveComponent(ce);
 
             // Default ports
             if (type.equals("NOT")) {
-                createPort(ce, "IN", 0, PortEntity.PortType.INPUT);
-                createPort(ce, "OUT", 0, PortEntity.PortType.OUTPUT);
+                createPort(ce, "IN", 0, PortEntity.PortType.INPUT, localPortService);
+                createPort(ce, "OUT", 0, PortEntity.PortType.OUTPUT, localPortService);
             } else if (type.equals("LED")) {
-                createPort(ce, "IN", 0, PortEntity.PortType.INPUT);
+                createPort(ce, "IN", 0, PortEntity.PortType.INPUT, localPortService);
             } else if (type.equals("SWITCH") || type.equals("CLOCK")) {
-                createPort(ce, "OUT", 0, PortEntity.PortType.OUTPUT);
+                createPort(ce, "OUT", 0, PortEntity.PortType.OUTPUT, localPortService);
             } else {
-                createPort(ce, "IN1", 0, PortEntity.PortType.INPUT);
-                createPort(ce, "IN2", 1, PortEntity.PortType.INPUT);
-                createPort(ce, "OUT", 0, PortEntity.PortType.OUTPUT);
+                createPort(ce, "IN1", 0, PortEntity.PortType.INPUT, localPortService);
+                createPort(ce, "IN2", 1, PortEntity.PortType.INPUT, localPortService);
+                createPort(ce, "OUT", 0, PortEntity.PortType.OUTPUT, localPortService);
             }
         }, this::loadFromDB);
     }
 
-    private void createPort(ComponentEntity ce, String name, int index, PortEntity.PortType type) {
+    private void createPort(ComponentEntity ce, String name, int index, PortEntity.PortType type, PortService service) {
         PortEntity p = new PortEntity();
         p.setComponent(ce);
         p.setName(name);
         p.setPortIndex(index);
         p.setType(type);
-        portService.addPort(p);
+        service.addPort(p);
     }
 
     // =========================================================
@@ -353,7 +362,8 @@ public class CircuitEditorView extends JPanel {
             if (port.getType() == PortEntity.PortType.INPUT && !port.getComponent().getId().equals(wireStart.getComponent().getId())) {
                 // Create connection
                 org.example.utils.LoadingUtil.executeWithLoading(this, "Connecting...", () -> {
-                    connectorService.connectPorts(wireStart, port, "#000000");
+                    ConnectorService localConnectorService = new ConnectorService();
+                    localConnectorService.connectPorts(wireStart, port, "#000000");
                 }, () -> {
                     wireStart = null;
                     wireCurrent = null;
@@ -376,7 +386,9 @@ public class CircuitEditorView extends JPanel {
      * Run backend simulation and refresh LED visuals (sets UILocalComponent.ledLit).
      */
     public void runSimulationAndRefresh() {
-        Circuit domain = simulationService.runSimulation(circuitId);
+        // Use local service to ensure fresh data (avoid stale cache)
+        SimulationService localSimulationService = new SimulationService();
+        Circuit domain = localSimulationService.runSimulation(circuitId);
 
         Map<String, Boolean> ledMap = new HashMap<>();
         for (Component dc : domain.getComponents()) {
@@ -438,7 +450,8 @@ public class CircuitEditorView extends JPanel {
     private void deleteSelectedComponent() {
         if (clickedComponent == null) return;
         org.example.utils.LoadingUtil.executeWithLoading(this, "Deleting Component...", () -> {
-            componentService.deleteComponent(clickedComponent.id);
+            ComponentService localComponentService = new ComponentService();
+            localComponentService.deleteComponent(clickedComponent.id);
         }, this::loadFromDB);
         clickedComponent = null;
     }
@@ -446,7 +459,8 @@ public class CircuitEditorView extends JPanel {
     private void deleteSelectedWire() {
         if (clickedWire == null) return;
         org.example.utils.LoadingUtil.executeWithLoading(this, "Deleting Wire...", () -> {
-            connectorService.deleteConnector(clickedWire.getId());
+            ConnectorService localConnectorService = new ConnectorService();
+            localConnectorService.deleteConnector(clickedWire.getId());
         }, this::loadFromDB);
         clickedWire = null;
     }
@@ -455,11 +469,12 @@ public class CircuitEditorView extends JPanel {
         SwingWorker<Void, Void> worker = new SwingWorker<>() {
             @Override
             protected Void doInBackground() {
-                ComponentEntity ce = componentService.getComponent(u.id);
+                ComponentService localComponentService = new ComponentService();
+                ComponentEntity ce = localComponentService.getComponent(u.id);
                 if (ce != null) {
                     ce.setPosX(u.x);
                     ce.setPosY(u.y);
-                    componentService.saveComponent(ce);
+                    localComponentService.saveComponent(ce);
                 }
                 return null;
             }
@@ -471,10 +486,11 @@ public class CircuitEditorView extends JPanel {
         String newLabel = JOptionPane.showInputDialog(this, "Edit Label:", u.label);
         if (newLabel != null && !newLabel.equals(u.label)) {
             org.example.utils.LoadingUtil.executeWithLoading(this, "Saving Properties...", () -> {
-                ComponentEntity ce = componentService.getComponent(u.id);
+                ComponentService localComponentService = new ComponentService();
+                ComponentEntity ce = localComponentService.getComponent(u.id);
                 if (ce != null) {
                     ce.setLabel(newLabel);
-                    componentService.saveComponent(ce);
+                    localComponentService.saveComponent(ce);
                 }
             }, this::loadFromDB);
         }

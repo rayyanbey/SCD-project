@@ -17,6 +17,18 @@ public class CircuitRepository {
         return em.find(CircuitEntity.class, id);
     }
 
+    public CircuitEntity findByIdWithComponents(Long id) {
+        String jpql = "SELECT DISTINCT c FROM CircuitEntity c " +
+                      "LEFT JOIN FETCH c.components comp " +
+                      "LEFT JOIN FETCH comp.ports p " +
+                      "LEFT JOIN FETCH p.outgoingConnections " +
+                      "WHERE c.id = :id";
+        List<CircuitEntity> results = em.createQuery(jpql, CircuitEntity.class)
+                .setParameter("id", id)
+                .getResultList();
+        return results.isEmpty() ? null : results.get(0);
+    }
+
     public List<CircuitEntity> findAll() {
         return em.createQuery("SELECT c FROM CircuitEntity c", CircuitEntity.class)
                 .getResultList();

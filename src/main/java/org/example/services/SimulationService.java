@@ -27,7 +27,7 @@ public class SimulationService {
     }
 
     public Circuit runSimulation(Long circuitId) {
-        CircuitEntity entity = circuitRepo.findById(circuitId);
+        CircuitEntity entity = circuitRepo.findByIdWithComponents(circuitId);
         if (entity == null) throw new RuntimeException("Circuit not found: " + circuitId);
         Circuit domain = MapperUtil.toDomain(entity);
         simulator.run(domain);
@@ -35,7 +35,7 @@ public class SimulationService {
     }
 
     public List<Map<String, Boolean>> generateTruthTable(Long circuitId) {
-        CircuitEntity entity = circuitRepo.findById(circuitId);
+        CircuitEntity entity = circuitRepo.findByIdWithComponents(circuitId);
         if (entity == null) throw new RuntimeException("Circuit not found: " + circuitId);
         Circuit domain = MapperUtil.toDomain(entity);
         return truthGen.generateTruthTable(domain);

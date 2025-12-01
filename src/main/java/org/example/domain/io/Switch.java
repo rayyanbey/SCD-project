@@ -5,16 +5,18 @@ import org.example.domain.OutputPort;
 
 public class Switch extends Component {
 
+    private boolean isOn = false;
+
     public Switch() {
         outputs.add(new OutputPort(this));
     }
 
     public void setOn(boolean on) {
-        outputs.get(0).setValue(on);
+        this.isOn = on;
     }
 
     @Override
     public void evaluate() {
-        // Switch value stays what the user sets
+        outputs.get(0).setValue(isOn);
     }
 }
