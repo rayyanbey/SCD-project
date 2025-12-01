@@ -20,6 +20,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
 import java.util.List;
+import java.awt.image.BufferedImage;
 
 public class CircuitEditorView extends JPanel {
 
@@ -71,19 +72,55 @@ public class CircuitEditorView extends JPanel {
 
     // =================== ICON LOADING ===================
     private void loadIcons() {
+        // load icons defensively: getResource may return null -> ImageIO.read(null) throws
+        icons.put("AND", loadIcon("/icons/and.png"));
+        icons.put("OR", loadIcon("/icons/or.png"));
+        icons.put("NOT", loadIcon("/icons/not.png"));
+        icons.put("XOR", loadIcon("/icons/xor.png"));
+        icons.put("NAND", loadIcon("/icons/nand.png"));
+        icons.put("NOR", loadIcon("/icons/nor.png"));
+        icons.put("SWITCH", loadIcon("/icons/switch.png"));
+        icons.put("LED", loadIcon("/icons/led.png"));
+        icons.put("CLOCK", loadIcon("/icons/clock.png"));
+    }
+
+    private Image loadIcon(String resourcePath) {
         try {
-            icons.put("AND", ImageIO.read(getClass().getResource("/icons/and.png")));
-            icons.put("OR", ImageIO.read(getClass().getResource("/icons/or.png")));
-            icons.put("NOT", ImageIO.read(getClass().getResource("/icons/not.png")));
-            icons.put("XOR", ImageIO.read(getClass().getResource("/icons/xor.png")));
-            icons.put("NAND", ImageIO.read(getClass().getResource("/icons/nand.png")));
-            icons.put("NOR", ImageIO.read(getClass().getResource("/icons/nor.png")));
-            icons.put("SWITCH", ImageIO.read(getClass().getResource("/icons/switch.png")));
-            icons.put("LED", ImageIO.read(getClass().getResource("/icons/led.png")));
-            icons.put("CLOCK", ImageIO.read(getClass().getResource("/icons/clock.png")));
+            java.net.URL url = getClass().getResource(resourcePath);
+            if (url == null) {
+                System.err.println("Icon resource not found: " + resourcePath);
+                return createPlaceholderIcon();
+            }
+            Image img = ImageIO.read(url);
+            if (img == null) {
+                System.err.println("ImageIO returned null for: " + resourcePath);
+                return createPlaceholderIcon();
+            }
+            return img;
         } catch (Exception e) {
             e.printStackTrace();
+            return createPlaceholderIcon();
         }
+    }
+
+    private Image createPlaceholderIcon() {
+        BufferedImage img = new BufferedImage(COMP_W, COMP_H, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = img.createGraphics();
+        try {
+            g.setColor(new Color(230, 230, 230));
+            g.fillRect(0, 0, COMP_W, COMP_H);
+            g.setColor(Color.DARK_GRAY);
+            g.drawRect(0, 0, COMP_W - 1, COMP_H - 1);
+            g.setFont(g.getFont().deriveFont(Font.BOLD, 14f));
+            FontMetrics fm = g.getFontMetrics();
+            String s = "?";
+            int tx = (COMP_W - fm.stringWidth(s)) / 2;
+            int ty = (COMP_H - fm.getHeight()) / 2 + fm.getAscent();
+            g.drawString(s, tx, ty);
+        } finally {
+            g.dispose();
+        }
+        return img;
     }
 
     // =================== CONTEXT MENUS ===================
@@ -149,28 +186,28 @@ public class CircuitEditorView extends JPanel {
 
     // =================== LOAD FROM DB ===================
     public void loadFromDB() {
-        components.clear();
-        connectors.clear();
+        org.example.utils.LoadingUtil.executeWithLoading(this, "Loading Circuit...", () -> {
+            components.clear();
+            connectors.clear();
 
-        circuitService.clearCache();
-        CircuitEntity entity = circuitService.getCircuit(circuitId);
-        if (entity == null) return;
+            circuitService.clearCache();
+            CircuitEntity entity = circuitService.getCircuit(circuitId);
+            if (entity == null) return;
 
-        for (ComponentEntity ce : entity.getComponents()) {
-            UILocalComponent u = new UILocalComponent();
-            u.id = ce.getId();
-            u.type = ce.getType();
-            u.label = ce.getLabel();
-            u.x = ce.getPosX();
-            u.y = ce.getPosY();
-            u.rotation = ce.getRotation();
-            u.ports.addAll(ce.getPorts());
-            components.add(u);
-        }
+            for (ComponentEntity ce : entity.getComponents()) {
+                UILocalComponent u = new UILocalComponent();
+                u.id = ce.getId();
+                u.type = ce.getType();
+                u.label = ce.getLabel();
+                u.x = ce.getPosX();
+                u.y = ce.getPosY();
+                u.rotation = ce.getRotation();
+                u.ports.addAll(ce.getPorts());
+                components.add(u);
+            }
 
-        connectors.addAll(connectorService.getConnectorsForCircuit(circuitId));
-
-        repaint();
+            connectors.addAll(connectorService.getConnectorsForCircuit(circuitId));
+        }, this::repaint);
     }
 
     // =========================================================
@@ -182,31 +219,31 @@ public class CircuitEditorView extends JPanel {
     }
 
     private void placeNewComponent(String type, int x, int y) {
-        ComponentEntity ce = new ComponentEntity();
-        ce.setType(type);
-        ce.setLabel(type);
-        ce.setPosX(x);
-        ce.setPosY(y);
-        ce.setRotation(0);
-        ce.setCircuit(circuitService.getCircuit(circuitId));
+        org.example.utils.LoadingUtil.executeWithLoading(this, "Placing Component...", () -> {
+            ComponentEntity ce = new ComponentEntity();
+            ce.setType(type);
+            ce.setLabel(type);
+            ce.setPosX(x);
+            ce.setPosY(y);
+            ce.setRotation(0);
+            ce.setCircuit(circuitService.getCircuit(circuitId));
 
-        componentService.saveComponent(ce);
+            componentService.saveComponent(ce);
 
-        // Default ports
-        if (type.equals("NOT")) {
-            createPort(ce, "IN", 0, PortEntity.PortType.INPUT);
-            createPort(ce, "OUT", 0, PortEntity.PortType.OUTPUT);
-        } else if (type.equals("LED")) {
-            createPort(ce, "IN", 0, PortEntity.PortType.INPUT);
-        } else if (type.equals("SWITCH") || type.equals("CLOCK")) {
-            createPort(ce, "OUT", 0, PortEntity.PortType.OUTPUT);
-        } else {
-            createPort(ce, "IN1", 0, PortEntity.PortType.INPUT);
-            createPort(ce, "IN2", 1, PortEntity.PortType.INPUT);
-            createPort(ce, "OUT", 0, PortEntity.PortType.OUTPUT);
-        }
-
-        loadFromDB();
+            // Default ports
+            if (type.equals("NOT")) {
+                createPort(ce, "IN", 0, PortEntity.PortType.INPUT);
+                createPort(ce, "OUT", 0, PortEntity.PortType.OUTPUT);
+            } else if (type.equals("LED")) {
+                createPort(ce, "IN", 0, PortEntity.PortType.INPUT);
+            } else if (type.equals("SWITCH") || type.equals("CLOCK")) {
+                createPort(ce, "OUT", 0, PortEntity.PortType.OUTPUT);
+            } else {
+                createPort(ce, "IN1", 0, PortEntity.PortType.INPUT);
+                createPort(ce, "IN2", 1, PortEntity.PortType.INPUT);
+                createPort(ce, "OUT", 0, PortEntity.PortType.OUTPUT);
+            }
+        }, this::loadFromDB);
     }
 
     private void createPort(ComponentEntity ce, String name, int index, PortEntity.PortType type) {
@@ -525,37 +562,42 @@ public class CircuitEditorView extends JPanel {
 
     private void deleteSelectedComponent() {
         if (clickedComponent == null) return;
-
-        // delete connectors attached to ports (outgoing & incoming)
-        for (PortEntity p : clickedComponent.ports) {
-            // outgoing
-            List<ConnectorEntity> outgoing = connectorService.getOutgoingConnections(p.getId());
-            for (ConnectorEntity c : outgoing) {
-                connectorService.deleteConnector(c.getId());
+        
+        org.example.utils.LoadingUtil.executeWithLoading(this, "Deleting Component...", () -> {
+            // delete connectors attached to ports (outgoing & incoming)
+            for (PortEntity p : clickedComponent.ports) {
+                // outgoing
+                List<ConnectorEntity> outgoing = connectorService.getOutgoingConnections(p.getId());
+                for (ConnectorEntity c : outgoing) {
+                    connectorService.deleteConnector(c.getId());
+                }
+                // incoming
+                List<ConnectorEntity> incoming = connectorService.getIncomingConnections(p.getId());
+                for (ConnectorEntity c : incoming) {
+                    connectorService.deleteConnector(c.getId());
+                }
+                // Port deletion is handled by CascadeType.ALL on ComponentEntity
             }
-            // incoming
-            List<ConnectorEntity> incoming = connectorService.getIncomingConnections(p.getId());
-            for (ConnectorEntity c : incoming) {
-                connectorService.deleteConnector(c.getId());
-            }
-            // Port deletion is handled by CascadeType.ALL on ComponentEntity
-        }
 
-        // delete component entity
-        componentService.deleteComponent(clickedComponent.id);
-
-        // reload
-        loadFromDB();
-        clickedComponent = null;
-        repaint();
+            // delete component entity
+            componentService.deleteComponent(clickedComponent.id);
+        }, () -> {
+            // reload
+            loadFromDB();
+            clickedComponent = null;
+            repaint();
+        });
     }
 
     private void deleteSelectedWire() {
         if (clickedWire == null) return;
-        connectorService.deleteConnector(clickedWire.getId());
-        loadFromDB();
-        clickedWire = null;
-        repaint();
+        org.example.utils.LoadingUtil.executeWithLoading(this, "Deleting Wire...", () -> {
+            connectorService.deleteConnector(clickedWire.getId());
+        }, () -> {
+            loadFromDB();
+            clickedWire = null;
+            repaint();
+        });
     }
 
     // =========================================================
@@ -694,5 +736,3 @@ public class CircuitEditorView extends JPanel {
         }
     }
 }
-
-

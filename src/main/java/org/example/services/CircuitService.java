@@ -16,8 +16,8 @@ public class CircuitService {
         return repo.findById(id);
     }
 
-    public List<CircuitEntity> getCircuitsByProject(Long projectId) {
-        return repo.findByProject(projectId);
+    public List<CircuitEntity> getAllCircuits() {
+        return repo.findAll();
     }
 
     public void saveCircuit(CircuitEntity circuit) {
@@ -28,14 +28,16 @@ public class CircuitService {
         repo.update(circuit);
     }
 
+    public void deleteCircuit(Long id) {
+        repo.delete(id);
+    }
+
     public void refreshCircuit(CircuitEntity circuit) {
-        // Use EntityManager to refresh the entity state from the database
         if (circuit == null) return;
         em.refresh(circuit);
     }
 
     public void clearCache() {
-        // Clear the persistence context
         em.clear();
     }
 }

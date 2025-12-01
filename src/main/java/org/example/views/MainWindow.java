@@ -112,14 +112,52 @@ public class MainWindow extends JFrame {
                 JOptionPane.showMessageDialog(this, "No projects found.");
                 return;
             }
-            Object[] options = projects.stream().map(org.example.entity.ProjectEntity::getName).toArray();
-            String selected = (String) JOptionPane.showInputDialog(this, "Select Project:", "Open Project", JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
-            if (selected != null) {
-                // Find and select in tree
-                // Since ProjectExplorerView handles selection logic, we might just want to expand the tree or something.
-                // But for now, let's just reload the explorer which is simple.
-                projectExplorer.reloadAll();
-            }
+            
+            // Create a custom dialog for project selection
+            JDialog dialog = new JDialog(this, "Open Project", true);
+            dialog.setLayout(new BorderLayout());
+            dialog.setSize(400, 300);
+            dialog.setLocationRelativeTo(this);
+
+            DefaultListModel<org.example.entity.ProjectEntity> listModel = new DefaultListModel<>();
+            projects.forEach(listModel::addElement);
+            
+            JList<org.example.entity.ProjectEntity> list = new JList<>(listModel);
+            list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+            list.setCellRenderer(new DefaultListCellRenderer() {
+                @Override
+                public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                    super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                    if (value instanceof org.example.entity.ProjectEntity) {
+                        setText(((org.example.entity.ProjectEntity) value).getName());
+                    }
+                    return this;
+                }
+            });
+
+            dialog.add(new JScrollPane(list), BorderLayout.CENTER);
+
+            JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+            JButton openBtn = new JButton("Open");
+            JButton cancelBtn = new JButton("Cancel");
+            
+            openBtn.addActionListener(ev -> {
+                org.example.entity.ProjectEntity selected = list.getSelectedValue();
+                if (selected != null) {
+                    projectExplorer.selectProjectAndFirstCircuit(selected);
+                    dialog.dispose();
+                } else {
+                    JOptionPane.showMessageDialog(dialog, "Please select a project.");
+                }
+            });
+            
+            cancelBtn.addActionListener(ev -> dialog.dispose());
+            
+            btnPanel.add(openBtn);
+            btnPanel.add(cancelBtn);
+            dialog.add(btnPanel, BorderLayout.SOUTH);
+            
+            dialog.setVisible(true);
         });
         fileMenu.add(openProjectItem);
 

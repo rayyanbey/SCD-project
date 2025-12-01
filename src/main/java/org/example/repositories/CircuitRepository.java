@@ -17,10 +17,8 @@ public class CircuitRepository {
         return em.find(CircuitEntity.class, id);
     }
 
-    public List<CircuitEntity> findByProject(Long projectId) {
-        return em.createQuery(
-                        "SELECT c FROM CircuitEntity c WHERE c.project.id = :pid", CircuitEntity.class)
-                .setParameter("pid", projectId)
+    public List<CircuitEntity> findAll() {
+        return em.createQuery("SELECT c FROM CircuitEntity c", CircuitEntity.class)
                 .getResultList();
     }
 
