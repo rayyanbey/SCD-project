@@ -67,6 +67,17 @@
                     <release>21</release>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.12.0</version> <!-- Use the latest stable version -->
+                <configuration>
+                    <show>public</show>
+                    <nohelp>true</nohelp>
+                    <doctitle>My Project API Documentation</doctitle>
+                    <windowtitle>My Project API</windowtitle>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
