@@ -42,16 +42,11 @@
         <artifactId>slf4j-simple</artifactId>
         <version>2.0.9</version>
     </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.13.1</version>
-            <scope>test</scope>
-        </dependency>
+        <!-- Use a stable JUnit Jupiter release to avoid mixing platform versions -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>RELEASE</version>
+            <version>5.9.3</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -67,18 +62,24 @@
                     <release>21</release>
                 </configuration>
             </plugin>
+            <!-- Ensure Surefire uses a modern runner compatible with JUnit Jupiter -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.12.0</version> <!-- Use the latest stable version -->
-                <configuration>
-                    <show>public</show>
-                    <nohelp>true</nohelp>
-                    <doctitle>My Project API Documentation</doctitle>
-                    <windowtitle>My Project API</windowtitle>
-                </configuration>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.1.2</version>
             </plugin>
-        </plugins>
-    </build>
+             <plugin>
+                 <groupId>org.apache.maven.plugins</groupId>
+                 <artifactId>maven-javadoc-plugin</artifactId>
+                 <version>3.12.0</version> <!-- Use the latest stable version -->
+                 <configuration>
+                     <show>public</show>
+                     <nohelp>true</nohelp>
+                     <doctitle>My Project API Documentation</doctitle>
+                     <windowtitle>My Project API</windowtitle>
+                 </configuration>
+             </plugin>
+         </plugins>
+     </build>
 
-</project>
+ </project>

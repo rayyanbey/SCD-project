@@ -2,8 +2,8 @@ package org.example.entity;
 
 import jakarta.persistence.*;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "circuits")
@@ -47,11 +47,11 @@ public class CircuitEntity {
         this.project = project;
     }
 
-    public List<ComponentEntity> getComponents() {
+    public Set<ComponentEntity> getComponents() {
         return components;
     }
 
-    public void setComponents(List<ComponentEntity> components) {
+    public void setComponents(Set<ComponentEntity> components) {
         this.components = components;
     }
 
@@ -60,7 +60,7 @@ public class CircuitEntity {
     private ProjectEntity project;
 
     @OneToMany(mappedBy = "circuit", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ComponentEntity> components = new ArrayList<>();
+    private Set<ComponentEntity> components = new HashSet<>();
 
     public CircuitEntity() {}
 }

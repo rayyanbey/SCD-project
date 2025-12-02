@@ -2,7 +2,8 @@ package org.example.entity;
 
 import jakarta.persistence.*;
 
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "port")
@@ -19,18 +20,18 @@ public class PortEntity {
     private PortType type;
 
     @OneToMany(mappedBy = "sourcePort", cascade = CascadeType.ALL)
-    private List<ConnectorEntity> outgoingConnections;
+    private Set<ConnectorEntity> outgoingConnections = new HashSet<>();
 
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "component_id")
     private ComponentEntity component;
 
-    public List<ConnectorEntity> getOutgoingConnections() {
+    public Set<ConnectorEntity> getOutgoingConnections() {
         return outgoingConnections;
     }
 
-    public void setOutgoingConnections(List<ConnectorEntity> outgoingConnections) {
+    public void setOutgoingConnections(Set<ConnectorEntity> outgoingConnections) {
         this.outgoingConnections = outgoingConnections;
     }
 
